@@ -56,13 +56,13 @@
           container.appendChild(div);
         });
 
-      } catch (err) {
-        document.getElementById('predictions').innerHTML = `
-          <div class="bg-red-50 text-red-600 p-6 rounded-2xl text-center">
-            加载油价失败，请稍后刷新<br>
-            <span class="text-xs">${err.message}</span>
-          </div>`;
-      }
+} catch (err) {
+  document.getElementById('predictions').innerHTML = `
+    <div class="bg-red-50 text-red-600 p-6 rounded-2xl text-center">
+      加载油价失败<br>
+      <span class="text-xs mt-2 block">请稍后刷新页面</span>
+    </div>`;
+}
     }
 
     // 页面加载时执行
