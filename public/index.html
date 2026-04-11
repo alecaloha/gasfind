@@ -141,7 +141,7 @@
             resultsContainer.innerHTML = '<p style="text-align: center; color: var(--primary-color);">🔍 正在从服务器获取数据...</p>';
 
             // 调用 Vercel Serverless Function
-            fetch('/api/gas-prices')
+            fetch('/api/gas')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
