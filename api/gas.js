@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 
 export default async function handler(req, res) {
   try {
-    const url = 'https://www.affordableenergy.ca/gas-prices/oakville/';
+    const url = 'https://gas-proxy.alec.workers.dev';
     const response = await fetch(url);
     const html = await response.text();
 
