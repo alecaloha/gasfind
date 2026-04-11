@@ -1,32 +1,25 @@
-// api/gas.js   ← 完整替换成这个
+// api/gas.js
 export default {
   async fetch(request) {
     try {
-      const res = await fetch("https://gasfind.trustyalec.workers.dev");
-      const html = await res.text();
+      const html = await (await fetch("https://gasfind.trustyalec.workers.dev")).text();
 
       const predictions = [];
 
-      // 提取3天预测
-      const dateRegex = /### Gas Prices for (.*?,\s*\d{4})/g;
-      const dates = [...html.matchAll(dateRegex)];
+      // 提取日期和 Regular 价格（当前页面格式）
+      const dateMatches = html.match(/### Gas Prices for (.*?,\s*\d{4})/g) || [];
+      const priceMatches = html.match(/Regular\s*\n\s*(\d+\.?\d*)/g) || [];
 
-      const regularRegex = /Regular\s*\n\s*(\d+\.?\d*)/g;
-      const prices = [...html.matchAll(regularRegex)];
+      for (let i = 0; i < Math.min(dateMatches.length, priceMatches.length, 3); i++) {
+        const dateFull = dateMatches[i];
+        const date = dateFull.replace('### Gas Prices for ', '').trim();
+        const regular = parseFloat(priceMatches[i].match(/\d+\.?\d*/)[0]);
 
-      for (let i = 0; i < Math.min(dates.length, prices.length, 3); i++) {
-        const date = dates[i][1].trim();
-        const regular = parseFloat(prices[i][1]);
-
-        // 提取涨跌（更宽松）
-        const changeMatch = html.match(new RegExp(`### Gas Prices for ${date.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?Regular\\s*\\n\\s*\\d+\\.\\d*\\s*([↑↓(].*?)(?=\\n\\n|Premium)`, 'i'));
-        const change = changeMatch ? changeMatch[1].trim() : '(n/c)';
-
-        predictions.push({ date, regular, change });
-      }
-
-      if (predictions.length === 0) {
-        throw new Error("No data extracted");
+        predictions.push({
+          date: date,
+          regular: regular,
+          change: '(n/c)'   // 暂时固定，后续可优化
+        });
       }
 
       return Response.json({
@@ -38,11 +31,9 @@ export default {
       });
 
     } catch (err) {
-      console.error(err);
-      return Response.json({
-        success: false,
-        error: "抓取失败，请检查页面结构",
-        message: err.message
+      return Response.json({ 
+        success: false, 
+        error: err.message 
       }, { status: 500 });
     }
   }
