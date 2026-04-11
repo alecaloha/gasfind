@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Oakville 实时油价查询</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: #238636;
+      color: white;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+
+    button:hover {
+      background: #2ea043;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .station {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .price {
+      font-size: 22px;
+      color: #3fb950;
+      margin-bottom: 8px;
+    }
+
+    .updated {
+      font-size: 13px;
+      color: #8b949e;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>⛽ Oakville 实时油价查询</h1>
+
+    <button id="fetchBtn">查询最新油价</button>
+
+    <div id="status"></div>
+
+    <div id="cards" class="grid"></div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('fetchBtn');
+    const cards = document.getElementById('cards');
+    const status = document.getElementById('status');
+
+    btn.onclick = async () => {
+      status.textContent = "正在抓取数据…";
+      cards.innerHTML = "";
+
+      try {
+        const res = await fetch('/api/gas');
+        const data = await res.json();
+
+        status.textContent = `共 ${data.count} 条记录`;
+
+        data.data.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = `
+            <div class="station">${item.station}</div>
+            <div class="price">${item.price}</div>
+            <div class="updated">更新时间：${item.updated}</div>
+          `;
+          cards.appendChild(div);
+        });
+
+      } catch (err) {
+        status.textContent = "❌ 获取失败，请检查后端";
+      }
+    };
+  </script>
+</body>
+</html>
