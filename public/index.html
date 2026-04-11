@@ -83,36 +83,35 @@
     <div id="cards" class="grid"></div>
   </div>
 
-  <script>
-    const btn = document.getElementById('fetchBtn');
-    const cards = document.getElementById('cards');
-    const status = document.getElementById('status');
+<script>
+  const btn = document.getElementById('fetchBtn');
+  const cards = document.getElementById('cards');
+  const status = document.getElementById('status');
 
-    btn.onclick = async () => {
-      status.textContent = "正在抓取数据…";
-      cards.innerHTML = "";
+  btn.onclick = async () => {
+    status.textContent = "正在抓取数据…";
+    cards.innerHTML = "";
 
-      try {
-        const res = await fetch('/api/gas');
-        const data = await res.json();
+    try {
+      const res = await fetch('/api/gas');
+      const data = await res.json();
 
-        status.textContent = `共 ${data.count} 条记录`;
+      // 新格式：单条数据
+      status.textContent = "获取成功";
 
-        data.data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'card';
-          div.innerHTML = `
-            <div class="station">${item.station}</div>
-            <div class="price">${item.price}</div>
-            <div class="updated">更新时间：${item.updated}</div>
-          `;
-          cards.appendChild(div);
-        });
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <div class="station">${data.title}</div>
+        <div class="price">${data.price}</div>
+        <div class="updated">${data.updated}</div>
+      `;
+      cards.appendChild(div);
 
-      } catch (err) {
-        status.textContent = "❌ 获取失败，请检查后端";
-      }
-    };
-  </script>
+    } catch (err) {
+      status.textContent = "❌ 获取失败，请检查后端";
+    }
+  };
+</script>
 </body>
 </html>
