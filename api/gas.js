@@ -6,22 +6,31 @@ export default {
       const html = await response.text();
 
       const predictions = [];
-      const dateRegex = /Gas Prices for (.*?, \d{4})/g;
-      const priceRegex = /Regular<br>(\d+\.?\d*)/g;
 
-      let dateMatch;
-      let priceMatch;
+      // 匹配日期
+      const dateMatches = [...html.matchAll(/### Gas Prices for (.*?,\s*\d{4})/g)];
 
-      // 简单粗暴但有效的匹配方式
-      const dates = [...html.matchAll(dateRegex)];
-      const prices = [...html.matchAll(priceRegex)];
+      // 匹配 Regular 价格（支持 (n/c) 和 ↑ ↓ 格式）
+      const regularMatches = [...html.matchAll(/Regular\s*\n\s*(\d+\.?\d*)/g)];
 
-      for (let i = 0; i < Math.min(dates.length, prices.length, 3); i++) {
+      for (let i = 0; i < Math.min(dateMatches.length, regularMatches.length, 3); i++) {
+        const date = dateMatches[i][1].trim();
+        const regular = parseFloat(regularMatches[i][1]);
+
+        // 尝试提取涨跌信息
+        const changeRegex = new RegExp(`### Gas Prices for ${date.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?Regular\\s*\\n\\s*\\d+\\.\\d*\\s*([↑↓(n/c)].*?)(?=\\n\\n|Premium|$)`, 'i');
+        const changeMatch = html.match(changeRegex);
+        const change = changeMatch ? changeMatch[1].trim() : '';
+
         predictions.push({
-          date: dates[i][1].trim(),           // 如 "Tuesday, April 14, 2026"
-          regular: parseFloat(prices[i][1]),
-          change: ""                          // 可后续优化抓取 ↑ ↓
+          date: date,
+          regular: regular,
+          change: change
         });
+      }
+
+      if (predictions.length === 0) {
+        return Response.json({ success: false, error: "未能提取油价数据" }, { status: 500 });
       }
 
       return Response.json({
