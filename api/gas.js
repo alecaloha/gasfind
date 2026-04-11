@@ -10,12 +10,14 @@ export default async function handler(req, res) {
     const $ = cheerio.load(html);
     const results = [];
 
-    $('.gas-price-item').each((i, el) => {
-      results.push({
-        station: $(el).find('.gas-price-location').text().trim(),
-        price: $(el).find('.gas-price-price').text().trim(),
-        updated: $(el).find('.gas-price-updated').text().trim(),
-      });
+    $('.gas-price-row').each((i, el) => {
+      const station = $(el).find('.location').text().trim();
+      const price = $(el).find('.price').text().trim();
+      const updated = $(el).find('.updated').text().trim();
+
+      if (station && price) {
+        results.push({ station, price, updated });
+      }
     });
 
     res.status(200).json({
