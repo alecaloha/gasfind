@@ -96,15 +96,20 @@
       const res = await fetch('/api/gas');
       const data = await res.json();
 
-      // 新格式：单条数据
       status.textContent = "获取成功";
 
       const div = document.createElement('div');
       div.className = 'card';
       div.innerHTML = `
-        <div class="station">${data.title}</div>
-        <div class="price">${data.price}</div>
-        <div class="updated">${data.updated}</div>
+        <div class="station">${data.date}</div>
+
+        <div class="price">Regular：${data.regular}</div>
+        <div class="price">Premium：${data.premium}</div>
+        <div class="price">Diesel：${data.diesel}</div>
+
+        <div class="updated">Regular 变化：${data.change_regular}</div>
+        <div class="updated">Premium 变化：${data.change_premium}</div>
+        <div class="updated">Diesel 变化：${data.change_diesel}</div>
       `;
       cards.appendChild(div);
 
