@@ -3,26 +3,23 @@ import * as cheerio from 'cheerio';
 
 export default async function handler(req, res) {
   try {
-    const url = 'https://gas-proxy.alec.workers.dev';
-    const response = await fetch(url);
+    const proxyUrl = "https://gasfind.trustyalec.workers.dev";
+    const response = await fetch(proxyUrl);
     const html = await response.text();
 
     const $ = cheerio.load(html);
-    const results = [];
 
-    $('.gas-price-row').each((i, el) => {
-      const station = $(el).find('.location').text().trim();
-      const price = $(el).find('.price').text().trim();
-      const updated = $(el).find('.updated').text().trim();
+    // 找到包含油价的区块
+    const block = $('.wp-block-group').first();
 
-      if (station && price) {
-        results.push({ station, price, updated });
-      }
-    });
+    const title = block.find('p').eq(0).text().trim();
+    const price = block.find('strong').first().text().trim();
+    const updated = block.find('p').eq(2).text().trim();
 
     res.status(200).json({
-      count: results.length,
-      data: results
+      title,
+      price,
+      updated
     });
 
   } catch (err) {
