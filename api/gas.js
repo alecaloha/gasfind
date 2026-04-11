@@ -9,26 +9,31 @@ export default async function handler(req, res) {
 
     const $ = cheerio.load(html);
 
-    // 找到包含油价的区块（第一个 wp-block-group）
-    const block = $('.wp-block-group').first();
+    // 找到最新一天的价格区块
+    const firstDay = $('.mb-6.bg-gray-50.rounded').first();
 
-    const title = block.find('p').eq(0).text().trim();
-    const price = block.find('strong').first().text().trim();
-    const updated = block.find('p').eq(2).text().trim();
+    const date = firstDay.find('h3').text().trim();
 
-    // 如果 price 为空，说明解析失败
-    if (!price) {
-      return res.status(500).json({ error: "Parsing failed" });
-    }
+    const prices = firstDay.find('.text-2xl.md\\:text-5xl.font-bold')
+      .map((i, el) => $(el).text().trim())
+      .get();
+
+    const changes = firstDay.find('.text-sm.font-bold')
+      .map((i, el) => $(el).text().trim())
+      .get();
 
     res.status(200).json({
-      title,
-      price,
-      updated
+      date,
+      regular: prices[0],
+      premium: prices[1],
+      diesel: prices[2],
+      change_regular: changes[0],
+      change_premium: changes[1],
+      change_diesel: changes[2]
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch gas prices' });
+    res.status(500).json({ error: 'Failed to parse gas prices' });
   }
 }
