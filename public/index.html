@@ -1,122 +1,75 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>Oakville 实时油价查询</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GTA 油价预测</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      background: #0d1117;
-      color: #e6edf3;
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
-
-    h1 {
-      font-size: 26px;
-      margin-bottom: 10px;
-    }
-
-    button {
-      background: #238636;
-      color: white;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 15px;
-      margin-bottom: 20px;
-    }
-
-    button:hover {
-      background: #2ea043;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(10px);
-    }
-
-    .station {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .price {
-      font-size: 22px;
-      color: #3fb950;
-      margin-bottom: 8px;
-    }
-
-    .updated {
-      font-size: 13px;
-      color: #8b949e;
-    }
+    body { font-family: system-ui, -apple-system, sans-serif; }
   </style>
 </head>
+<body class="bg-gray-50 min-h-screen py-8">
+  <div class="max-w-md mx-auto px-4">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">GTA 油价预测</h1>
+      <p class="text-gray-500 text-sm mt-1">Dan McTeague • 未来 3 天</p>
+    </div>
 
-<body>
-  <div class="container">
-    <h1>⛽ Oakville 实时油价查询</h1>
+    <div id="predictions" class="space-y-4">
+      <!-- JS 动态填充 -->
+    </div>
 
-    <button id="fetchBtn">查询最新油价</button>
-
-    <div id="status"></div>
-
-    <div id="cards" class="grid"></div>
+    <div class="text-center text-xs text-gray-400 mt-10">
+      数据来源：Canadians for Affordable Energy<br>
+      预测仅供参考 • 实际价格以加油站为准
+    </div>
   </div>
 
-<script>
-  const btn = document.getElementById('fetchBtn');
-  const cards = document.getElementById('cards');
-  const status = document.getElementById('status');
+  <script>
+    async function loadGasPrices() {
+      try {
+        const res = await fetch('/api/gas');
+        const data = await res.json();
 
-  btn.onclick = async () => {
-    status.textContent = "正在抓取数据…";
-    cards.innerHTML = "";
+        if (!data.success) throw new Error(data.error);
 
-    try {
-      const res = await fetch('/api/gas');
-      const data = await res.json();
+        const container = document.getElementById('predictions');
+        container.innerHTML = '';
 
-      status.textContent = "获取成功";
+        data.predictions.forEach(p => {
+          const div = document.createElement('div');
+          div.className = `bg-white rounded-2xl shadow-sm p-5 border border-gray-100`;
+          div.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="text-lg font-semibold text-gray-900">${p.date}</div>
+              </div>
+              ${p.change ? `<span class="text-sm px-3 py-1 rounded-full ${p.change.includes('↑') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">${p.change}</span>` : ''}
+            </div>
+            <div class="mt-3 flex items-baseline">
+              <span class="text-5xl font-bold text-gray-900">${p.regular}</span>
+              <span class="text-xl text-gray-400 ml-1">¢/L</span>
+              <span class="ml-auto text-sm text-gray-500">Regular</span>
+            </div>
+          `;
+          container.appendChild(div);
+        });
 
-      const div = document.createElement('div');
-      div.className = 'card';
-      div.innerHTML = `
-        <div class="station">${data.date}</div>
-
-        <div class="price">Regular：${data.regular}</div>
-        <div class="price">Premium：${data.premium}</div>
-        <div class="price">Diesel：${data.diesel}</div>
-
-        <div class="updated">Regular 变化：${data.change_regular}</div>
-        <div class="updated">Premium 变化：${data.change_premium}</div>
-        <div class="updated">Diesel 变化：${data.change_diesel}</div>
-      `;
-      cards.appendChild(div);
-
-    } catch (err) {
-      status.textContent = "❌ 获取失败，请检查后端";
+      } catch (err) {
+        document.getElementById('predictions').innerHTML = `
+          <div class="bg-red-50 text-red-600 p-6 rounded-2xl text-center">
+            加载油价失败，请稍后刷新<br>
+            <span class="text-xs">${err.message}</span>
+          </div>`;
+      }
     }
-  };
-</script>
+
+    // 页面加载时执行
+    loadGasPrices();
+    
+    // 可选：每 30 分钟自动刷新
+    setInterval(loadGasPrices, 30 * 60 * 1000);
+  </script>
 </body>
 </html>
