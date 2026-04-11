@@ -7,19 +7,19 @@ export default {
 
       const predictions = [];
 
-      // 匹配日期
+      // 匹配所有 3 天的日期
       const dateMatches = [...html.matchAll(/### Gas Prices for (.*?,\s*\d{4})/g)];
 
       // 匹配 Regular 价格（支持 (n/c) 和 ↑ ↓ 格式）
-      const regularMatches = [...html.matchAll(/Regular\s*\n\s*(\d+\.?\d*)/g)];
+      const priceMatches = [...html.matchAll(/Regular\s*\n\s*(\d+\.?\d*)/g)];
 
-      for (let i = 0; i < Math.min(dateMatches.length, regularMatches.length, 3); i++) {
+      for (let i = 0; i < Math.min(dateMatches.length, priceMatches.length, 3); i++) {
         const date = dateMatches[i][1].trim();
-        const regular = parseFloat(regularMatches[i][1]);
+        const regular = parseFloat(priceMatches[i][1]);
 
-        // 尝试提取涨跌信息
-        const changeRegex = new RegExp(`### Gas Prices for ${date.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?Regular\\s*\\n\\s*\\d+\\.\\d*\\s*([↑↓(n/c)].*?)(?=\\n\\n|Premium|$)`, 'i');
-        const changeMatch = html.match(changeRegex);
+        // 提取涨跌信息（更宽松匹配）
+        const section = html.split(dateMatches[i][0])[1]?.split('###')[0] || '';
+        const changeMatch = section.match(/Regular\s*\n\s*\d+\.?\d*\s*([↑↓(n/c)].*?)(?=\n\n|$)/);
         const change = changeMatch ? changeMatch[1].trim() : '';
 
         predictions.push({
@@ -30,7 +30,7 @@ export default {
       }
 
       if (predictions.length === 0) {
-        return Response.json({ success: false, error: "未能提取油价数据" }, { status: 500 });
+        throw new Error("No predictions found");
       }
 
       return Response.json({
