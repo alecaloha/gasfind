@@ -1,10 +1,9 @@
 // Vercel Serverless Function for Gas Prices
+import * as cheerio from 'cheerio';
+
 export default async function handler(req, res) {
   try {
-    // 1. 定义要抓取的网站 URL
     const targetUrl = 'https://gasfind.trustyalec.workers.dev/';
-    
-    // 2. 发起网络请求 (请注意：如果目标站点有反爬虫机制，可能会失败)
     const response = await fetch(targetUrl);
     
     if (!response.ok) {
@@ -12,16 +11,34 @@ export default async function handler(req, res) {
     }
     
     const html = await response.text();
+    const $ = cheerio.load(html);
     
-    // 3. 解析数据 (这里需要根据实际的目标网站 HTML 结构来编写正则或解析逻辑)
-    // ⚠️ 由于这是一个演示，我们使用模拟数据。实际使用中，你需要分析目标网站的 HTML 结构。
-    const prices = [
-        { date: '2026-04-11 (周六)', regular: '186.9', premium: '216.9', diesel: '236.9' },
-        { date: '2026-04-10 (周五)', regular: '188.9', premium: '218.9', diesel: '232.9' },
-        { date: '2026-04-09 (周四)', regular: '187.9', premium: '217.9', diesel: '233.9' }
-    ];
+    const prices = [];
+    
+    // 解析每个价格区块
+    // 网站结构：每个日期是一个 div.mb-6，h3 包含日期，内部的 grid 包含价格
+    $('div.mb-6.bg-gray-50').each((index, element) => {
+      if (index >= 3) return; // 只取最近3天的数据
 
-    // 4. 返回结构化数据给前端
+      const $element = $(element);
+      
+      // 提取日期 (例如: "Gas Prices for Tuesday, April 14, 2026")
+      const dateRaw = $element.find('h3').text().replace('Gas Prices for ', '').trim();
+      
+      // 提取价格
+      const grid = $element.find('.grid.grid-cols-3');
+      const regular = grid.find('div').eq(0).find('span.text-2xl').text().trim();
+      const premium = grid.find('div').eq(1).find('span.text-2xl').text().trim();
+      const diesel = grid.find('div').eq(2).find('span.text-2xl').text().trim();
+
+      prices.push({
+        date: dateRaw,
+        regular: regular,
+        premium: premium,
+        diesel: diesel
+      });
+    });
+
     res.status(200).json({
       source: targetUrl,
       timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'America/Toronto' }),
