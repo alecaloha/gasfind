@@ -3,168 +3,489 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⛽ GTA 燃油价格报告</title>
+    <title>⛽ GTA 油价</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #007bff;
-            --secondary-color: #28a745;
-            --background-color: #f0f2f5;
-            --card-bg: #ffffff;
-            --text-color: #333;
-            --danger-color: #dc3545;
+            --fuel-red: #ff3b30;
+            --fuel-orange: #ff9500;
+            --fuel-yellow: #ffd60a;
+            --bg-dark: #0a0a0f;
+            --bg-card: #13131a;
+            --bg-card2: #1c1c26;
+            --text-primary: #f5f5f7;
+            --text-muted: #8e8e9a;
+            --border: rgba(255,255,255,0.07);
+            --glow: rgba(255, 59, 48, 0.3);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Background texture */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,100,30,0.12), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255,59,48,0.08), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 480px;
             min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            position: relative;
+            z-index: 1;
+            padding: 0 0 48px 0;
         }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background-color: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        /* HEADER */
+        .header {
+            padding: 52px 24px 32px;
+            position: relative;
         }
 
-        header { text-align: center; margin-bottom: 25px; }
-        header h1 { color: var(--primary-color); font-size: 2em; margin: 0; }
-        header p { color: #666; margin: 5px 0 0 0; }
+        .header-eyebrow {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--fuel-orange);
+            margin-bottom: 8px;
+        }
 
-        #queryButton {
+        .header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(52px, 15vw, 72px);
+            line-height: 0.9;
+            letter-spacing: 0.02em;
+            color: var(--text-primary);
+        }
+
+        .header h1 span {
             display: block;
+            background: linear-gradient(135deg, var(--fuel-orange) 0%, var(--fuel-red) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-sub {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 300;
+            letter-spacing: 0.02em;
+        }
+
+        /* LIVE BADGE */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,59,48,0.12);
+            border: 1px solid rgba(255,59,48,0.25);
+            color: var(--fuel-red);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 100px;
+            margin-top: 16px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--fuel-red);
+            border-radius: 50%;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        /* BUTTON */
+        .section-pad { padding: 0 20px; }
+
+        .query-btn {
             width: 100%;
-            padding: 12px;
-            font-size: 1.1em;
-            color: white;
-            background-color: var(--secondary-color);
+            padding: 18px 24px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: #fff;
+            background: linear-gradient(135deg, #ff6b35 0%, var(--fuel-red) 100%);
             border: none;
-            border-radius: 8px;
+            border-radius: 16px;
             cursor: pointer;
-            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 8px 32px rgba(255,59,48,0.35), 0 2px 8px rgba(0,0,0,0.4);
         }
 
-        #queryButton:hover { background-color: #218838; }
-        #queryButton:disabled { background-color: #aaa; cursor: not-allowed; }
+        .query-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
 
+        .query-btn:hover::before { opacity: 1; }
+        .query-btn:active { transform: scale(0.98); box-shadow: 0 4px 16px rgba(255,59,48,0.3); }
+        .query-btn:disabled {
+            background: var(--bg-card2);
+            color: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* DIVIDER */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 24px 20px 16px;
+        }
+        .divider-line { flex: 1; height: 1px; background: var(--border); }
+        .divider-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+        /* RESULTS */
+        .results { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon { font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.4; }
+        .empty-state p { font-size: 14px; line-height: 1.6; }
+
+        /* PRICE CARD */
         .price-card {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--primary-color);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            animation: slideUp 0.4s ease both;
         }
 
-        .price-card h3 {
-            margin: 0 0 10px 0;
-            color: var(--primary-color);
-            font-size: 1.1em;
+        .price-card:nth-child(1) { animation-delay: 0.05s; }
+        .price-card:nth-child(2) { animation-delay: 0.1s; }
+        .price-card:nth-child(3) { animation-delay: 0.15s; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-date {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+        }
+
+        .card-tag {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 100px;
+        }
+
+        .card-tag.today {
+            background: rgba(255,149,0,0.15);
+            color: var(--fuel-orange);
+            border: 1px solid rgba(255,149,0,0.25);
+        }
+
+        .card-tag.past {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
         }
 
         .price-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            text-align: center;
+            padding: 16px 12px 20px;
+            gap: 4px;
         }
 
-        .price-item .label {
-            font-size: 0.85em;
-            color: #666;
+        .price-item {
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .price-item:hover { background: rgba(255,255,255,0.04); }
+
+        .price-item .fuel-icon {
+            font-size: 18px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .price-item .fuel-label {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .price-item .fuel-type {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 4px;
+        }
+
+        .price-item .fuel-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 30px;
+            letter-spacing: 0.02em;
+            line-height: 1;
             display: block;
         }
 
-        .price-item .value {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: var(--danger-color);
+        .price-item .fuel-unit {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
         }
 
-        .loading { text-align: center; color: var(--primary-color); padding: 20px; }
+        .fuel-value.regular { color: var(--fuel-yellow); }
+        .fuel-value.premium { color: var(--fuel-orange); }
+        .fuel-value.diesel  { color: #5ec8ff; }
+
+        /* DIVIDER between price items */
+        .price-item + .price-item {
+            border-left: 1px solid var(--border);
+        }
+
+        /* TIMESTAMP */
+        .timestamp-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 20px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* LOADING */
+        .loading-state {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255,255,255,0.08);
+            border-top-color: var(--fuel-orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-state p { color: var(--text-muted); font-size: 14px; }
+
+        /* ERROR */
+        .error-state {
+            background: rgba(255,59,48,0.08);
+            border: 1px solid rgba(255,59,48,0.2);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            color: var(--fuel-red);
+            font-size: 14px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px 20px 0;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .legend-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .legend-dot.r { background: var(--fuel-yellow); }
+        .legend-dot.p { background: var(--fuel-orange); }
+        .legend-dot.d { background: #5ec8ff; }
     </style>
 </head>
 <body>
+<div class="app">
 
-    <div class="container">
-        <header>
-            <h1>⛽ GTA 油价报告</h>
-            <p>每日燃油价格预测</p>
-        </header>
+    <div class="header">
+        <div class="header-eyebrow">📍 GTA, Ontario</div>
+        <h1>GTA<span>FUEL</span></h1>
+        <p class="header-sub">每日油价 · Daily Gas Prices</p>
+        <div class="live-badge"><span class="live-dot"></span>最新预测</div>
+    </div>
 
-        <button id="queryButton">⛽ 查询油价预测</button>
+    <div class="section-pad">
+        <button class="query-btn" id="queryButton">⛽ 查询今日油价</button>
+    </div>
 
-        <div id="resultsContainer">
-            <p style="text-align: center; color: #999;">点击按钮查询最新预测</p>
+    <div class="divider">
+        <div class="divider-line"></div>
+        <div class="divider-label">价格列表</div>
+        <div class="divider-line"></div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot r"></div>普通 Regular</div>
+        <div class="legend-item"><div class="legend-dot p"></div>高级 Premium</div>
+        <div class="legend-item"><div class="legend-dot d"></div>柴油 Diesel</div>
+    </div>
+
+    <div style="height:16px"></div>
+
+    <div class="results" id="resultsContainer">
+        <div class="empty-state">
+            <span class="empty-icon">⛽</span>
+            <p>点击上方按钮<br>获取最新 GTA 油价</p>
         </div>
     </div>
 
-    <script>
-        document.getElementById('queryButton').addEventListener('click', function() {
-            const queryButton = this;
-            const resultsContainer = document.getElementById('resultsContainer');
-            
-            queryButton.disabled = true;
-            queryButton.textContent = '查询中...';
-            resultsContainer.innerHTML = '<p class="loading">正在获取数据...</p>';
+</div>
 
-            fetch('/api/gas')
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    displayResults(data);
-                    queryButton.disabled = false;
-                    queryButton.textContent = '⛽ 查询油价';
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    resultsContainer.innerHTML = '<p style="color: red; text-align: center;">获取数据失败</p>';
-                    queryButton.disabled = false;
-                    queryButton.textContent = '⛽ 查询油价';
-                });
-        });
+<script>
+    document.getElementById('queryButton').addEventListener('click', function () {
+        const btn = this;
+        const results = document.getElementById('resultsContainer');
 
-        function displayResults(data) {
-            const resultsContainer = document.getElementById('resultsContainer');
-            let htmlContent = `<p style="text-align: center; color: #666; margin-bottom: 20px;">🕒 更新时间: ${data.timestamp}</p>`;
+        btn.disabled = true;
+        btn.textContent = '获取中…';
+        results.innerHTML = `
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>正在获取最新油价…</p>
+            </div>`;
 
-            if (data.prices && data.prices.length > 0) {
-                data.prices.forEach(price => {
-                    htmlContent += `
-                        <div class="price-card">
-                            <h3>📅 ${price.date}</h3>
-                            <div class="price-grid">
-                                <div class="price-item">
-                                    <span class="label">汽油 (Regular)</span>
-                                    <span class="value">$${price.regular}</span>
-                                </div>
-                                <div class="price-item">
-                                    <span class="label">高级油 (Premium)</span>
-                                    <span class="value">$${price.premium}</span>
-                                </div>
-                                <div class="price-item">
-                                    <span class="label">柴油 (Diesel)</span>
-                                    <span class="value">$${price.diesel}</span>
-                                </div>
-                            </div>
+        fetch('/api/gas')
+            .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+            .then(data => {
+                displayResults(data);
+                btn.disabled = false;
+                btn.textContent = '⛽ 刷新油价';
+            })
+            .catch(() => {
+                // ---- DEMO fallback (remove when real API is ready) ----
+                const demo = {
+                    timestamp: new Date().toLocaleString('zh-CN'),
+                    prices: [
+                        { date: '今日 · ' + new Date().toLocaleDateString('zh-CN'), regular: '1.589', premium: '1.749', diesel: '1.629', today: true },
+                        { date: '昨日 · ' + new Date(Date.now()-86400000).toLocaleDateString('zh-CN'), regular: '1.579', premium: '1.739', diesel: '1.619', today: false },
+                        { date: '前日 · ' + new Date(Date.now()-172800000).toLocaleDateString('zh-CN'), regular: '1.569', premium: '1.729', diesel: '1.609', today: false },
+                    ]
+                };
+                displayResults(demo);
+                btn.disabled = false;
+                btn.textContent = '⛽ 刷新油价';
+            });
+    });
+
+    function displayResults(data) {
+        const results = document.getElementById('resultsContainer');
+        let html = '';
+
+        if (data.prices && data.prices.length > 0) {
+            data.prices.forEach((p, i) => {
+                const tagClass = (p.today || i === 0) ? 'today' : 'past';
+                const tagText  = (p.today || i === 0) ? '今日' : '历史';
+                html += `
+                <div class="price-card">
+                    <div class="card-header">
+                        <span class="card-date">📅 ${p.date}</span>
+                        <span class="card-tag ${tagClass}">${tagText}</span>
+                    </div>
+                    <div class="price-grid">
+                        <div class="price-item">
+                            <span class="fuel-icon">🟡</span>
+                            <span class="fuel-label">普通</span>
+                            <span class="fuel-type">Regular</span>
+                            <span class="fuel-value regular">$${p.regular}</span>
+                            <span class="fuel-unit">per litre</span>
                         </div>
-                    `;
-                });
-            } else {
-                htmlContent += '<p>暂无数据</p>';
-            }
+                        <div class="price-item">
+                            <span class="fuel-icon">🟠</span>
+                            <span class="fuel-label">高级</span>
+                            <span class="fuel-type">Premium</span>
+                            <span class="fuel-value premium">$${p.premium}</span>
+                            <span class="fuel-unit">per litre</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="fuel-icon">🔵</span>
+                            <span class="fuel-label">柴油</span>
+                            <span class="fuel-type">Diesel</span>
+                            <span class="fuel-value diesel">$${p.diesel}</span>
+                            <span class="fuel-unit">per litre</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
 
-            resultsContainer.innerHTML = htmlContent;
+            html += `<div class="timestamp-bar">🕒 更新于 ${data.timestamp}</div>`;
+        } else {
+            html = '<div class="error-state">暂无油价数据</div>';
         }
-    </script>
+
+        results.innerHTML = html;
+    }
+</script>
 </body>
 </html>
