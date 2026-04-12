@@ -15,14 +15,13 @@ export default async function handler(req, res) {
     
     const prices = [];
     
-    // 解析每个价格区块
-    // 网站结构：每个日期是一个 div.mb-6，h3 包含日期，内部的 grid 包含价格
+    // 解析所有价格区块
     $('div.mb-6.bg-gray-50').each((index, element) => {
       if (index >= 3) return; // 只取最近3天的数据
 
       const $element = $(element);
       
-      // 提取日期 (例如: "Gas Prices for Tuesday, April 14, 2026")
+      // 提取日期
       const dateRaw = $element.find('h3').text().replace('Gas Prices for ', '').trim();
       
       // 提取价格
@@ -38,6 +37,9 @@ export default async function handler(req, res) {
         diesel: diesel
       });
     });
+
+    // 反转数组，将最早的日期放在前面
+    prices.reverse();
 
     res.status(200).json({
       source: targetUrl,
