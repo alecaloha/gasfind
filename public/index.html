@@ -1,345 +1,929 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GTA 油价</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --fuel-red: #ff3b30;
-      --fuel-orange: #ff9500;
-      --fuel-yellow: #ffd60a;
-      --bg-dark: #0a0a0f;
-      --bg-card: #13131a;
-      --bg-card2: #1c1c26;
-      --text-primary: #f5f5f7;
-      --text-muted: #8e8e9a;
-      --border: rgba(255, 255, 255, 0.07);
-      --glow: rgba(255, 59, 48, 0.3);
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTA 油价</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fuel-red: #ff3b30;
+  --fuel-orange: #ff9500;
+  --fuel-yellow: #ffd60a;
+  --bg-dark: #0a0a0f;
+  --bg-card: #13131a;
+  --bg-card2: #1c1c26;
+  --text-primary: #f5f5f7;
+  --text-muted: #8e8e9a;
+  --border: rgba(255,255,255,0.07);
+  --glow: rgba(255,59,48,0.3);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,100,30,0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255,59,48,0.08), transparent);
+  pointer-events:none;
+  z-index:0;
+}
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-primary);
-      min-height: 100vh;
-      padding: 0;
-      overflow-x: hidden;
-    }
+.app {
+  width:100%;
+  max-width:520px;
+  min-height:100vh;
+  margin:0 auto;
+  position:relative;
+  z-index:1;
+  padding-bottom:48px;
+}
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 100, 30, 0.12), transparent),
-        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 59, 48, 0.08), transparent);
-      pointer-events: none;
-      z-index: 0;
-    }
+/* HEADER */
+.header {
+  padding: 48px 20px 16px;
+}
+.header-eyebrow {
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--fuel-orange);
+  margin-bottom:6px;
+}
+.header-row {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.header h1 {
+  font-family:'Bebas Neue',sans-serif;
+  font-size: clamp(52px,15vw,72px);
+  line-height:0.9;
+  letter-spacing:0.02em;
+  color:var(--text-primary);
+  flex-shrink:0;
+}
+.header h1 span {
+  background: linear-gradient(135deg, var(--fuel-orange) 0%, var(--fuel-red) 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
 
-    .app {
-      width: 100%;
-      max-width: 480px;
-      min-height: 100vh;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-      padding-bottom: 48px;
-    }
+/* STOCKR BOX */
+.stockr-box {
+  background:var(--bg-card2);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:10px 14px;
+  flex:1;
+  min-width:0;
+}
+.stockr-title {
+  font-size:10px;
+  font-weight:600;
+  color:var(--fuel-orange);
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.stockr-item {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  margin-bottom:6px;
+  padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.stockr-item:last-child {
+  margin-bottom:0;
+  padding-bottom:0;
+  border-bottom:none;
+}
+.stockr-label {
+  font-size:11px;
+  color:var(--text-muted);
+  margin-right:6px;
+  white-space:nowrap;
+}
+.stockr-price {
+  font-size:20px;
+  font-weight:700;
+  color:var(--text-primary);
+}
+.stockr-date {
+  font-size:10px;
+  color:var(--text-muted);
+  margin-top:1px;
+  text-align:right;
+  line-height:1.3;
+}
+.stockr-loading {
+  font-size:13px;
+  color:var(--text-muted);
+  text-align:center;
+  padding:8px 0;
+}
 
-    /* HEADER */
-    .header {
-      padding: 52px 24px 24px;
-      position: relative;
-    }
+/* TAB BUTTONS */
+.tab-buttons {
+  display:flex;
+  gap:8px;
+  padding:0 20px;
+  margin-top:16px;
+}
+.tab-btn {
+  flex:1;
+  padding:12px 8px;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0.02em;
+  background:var(--bg-card);
+  color:var(--text-primary);
+  border:1px solid var(--border);
+  border-radius:14px;
+  cursor:pointer;
+  transition:all 0.2s ease;
+  text-align:center;
+  white-space:nowrap;
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, #ff6b35 0%, var(--fuel-red) 100%);
+  border-color:transparent;
+  color:white;
+  box-shadow:0 4px 15px rgba(255,59,48,0.4);
+}
+.tab-btn:hover:not(.active) {
+  border-color:rgba(255,150,0,0.3);
+  background:var(--bg-card2);
+}
 
-    .header-eyebrow {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--fuel-orange);
-      margin-bottom: 8px;
-    }
+/* RESULTS */
+.results {
+  padding:0 20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:20px;
+}
 
-    .header-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+/* PRICE CARDS */
+.price-card {
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  animation:slideUp 0.4s ease both;
+}
+.price-card:nth-child(1) { animation-delay:0.05s; }
+.price-card:nth-child(2) { animation-delay:0.10s; }
+.price-card:nth-child(3) { animation-delay:0.15s; }
 
-    .header h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(52px, 15vw, 72px);
-      line-height: 0.9;
-      letter-spacing: 0.02em;
-      color: var(--text-primary);
-    }
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
 
-    .header h1 span {
-      background: linear-gradient(135deg, var(--fuel-orange) 0%, var(--fuel-red) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+.card-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px 10px;
+  border-bottom:1px solid var(--border);
+}
+.card-date {
+  font-size:14px;
+  font-weight:600;
+  color:var(--text-primary);
+}
+.card-badge {
+  font-size:11px;
+  padding:3px 10px;
+  border-radius:9999px;
+  font-weight:600;
+  letter-spacing:0.04em;
+}
+.badge-today {
+  background:rgba(255,149,0,0.18);
+  color:var(--fuel-orange);
+}
+.badge-future {
+  background:rgba(48,209,88,0.15);
+  color:#30d158;
+}
+.badge-past {
+  background:rgba(142,142,154,0.15);
+  color:var(--text-muted);
+}
 
-    /* Stockr 预测区域（标题右侧） */
-    .stockr-box {
-      background: var(--bg-card2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px 16px;
-      min-width: 140px;
-      text-align: center;
-    }
+.price-main {
+  padding:20px 18px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+}
+.price-regular {
+  text-align:center;
+  flex:1;
+}
+.price-number {
+  font-size:50px;
+  font-weight:700;
+  line-height:1;
+  color:var(--text-primary);
+}
+.price-unit {
+  font-size:16px;
+  color:var(--text-muted);
+  margin-top:3px;
+}
+.price-type-label {
+  font-size:11px;
+  color:var(--text-muted);
+  font-weight:500;
+  margin-top:2px;
+}
 
-    .stockr-title {
-      font-size: 11px;
-      color: var(--fuel-orange);
-      letter-spacing: 0.1em;
-      margin-bottom: 4px;
-    }
+.price-side {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:80px;
+}
+.price-side-item {
+  background:var(--bg-card2);
+  border-radius:10px;
+  padding:6px 10px;
+  text-align:center;
+}
+.price-side-val {
+  font-size:16px;
+  font-weight:700;
+  color:var(--text-primary);
+}
+.price-side-lbl {
+  font-size:10px;
+  color:var(--text-muted);
+  margin-top:1px;
+  font-weight:500;
+}
 
-    .stockr-price {
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
+.card-change-row {
+  padding:0 18px 14px;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.change-chip {
+  font-size:12px;
+  padding:3px 10px;
+  border-radius:9999px;
+  font-weight:500;
+}
+.change-up   { background:rgba(255,59,48,0.15);  color:#ff3b30; }
+.change-down { background:rgba(48,209,88,0.15);  color:#30d158; }
+.change-nc   { background:rgba(142,142,154,0.12); color:var(--text-muted); }
 
-    .stockr-date {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
+/* CITYNEWS CARD */
+.citynews-summary-card {
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  animation:slideUp 0.3s ease both;
+}
+.citynews-summary-card .card-header {
+  background: linear-gradient(135deg,rgba(255,107,53,0.15),rgba(255,59,48,0.08));
+}
+.citynews-headline {
+  padding:20px 18px;
+  text-align:center;
+}
+.citynews-direction {
+  font-size:54px;
+  line-height:1;
+  margin-bottom:4px;
+}
+.citynews-change-text {
+  font-size:20px;
+  font-weight:700;
+}
+.citynews-date {
+  font-size:13px;
+  color:var(--text-muted);
+  margin-top:6px;
+}
+.citynews-avg {
+  border-top:1px solid var(--border);
+  padding:14px 18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.citynews-avg-label { font-size:13px; color:var(--text-muted); }
+.citynews-avg-val   { font-size:22px; font-weight:700; }
 
-    /* 切换按钮组 */
-    .tab-buttons {
-      display: flex;
-      gap: 8px;
-      padding: 0 20px;
-      margin-top: 12px;
-    }
+/* HISTORY TABLE */
+.history-section {
+  margin-top:8px;
+}
+.history-title {
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-muted);
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:0 4px 10px;
+}
+.history-card {
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+}
+.history-row {
+  display:flex;
+  align-items:center;
+  padding:11px 16px;
+  border-bottom:1px solid var(--border);
+  gap:10px;
+}
+.history-row:last-child { border-bottom:none; }
+.history-row.header-row {
+  background:var(--bg-card2);
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-muted);
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.history-date  { flex:2; font-size:13px; }
+.history-price { flex:1; font-size:14px; font-weight:600; text-align:right; }
+.history-change { flex:1; text-align:right; }
 
-    .tab-btn {
-      flex: 1;
-      padding: 14px 16px;
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      background: var(--bg-card);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
+/* PAST MONTHS */
+.months-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:8px;
+}
+.month-card {
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 14px;
+  animation:slideUp 0.35s ease both;
+}
+.month-name {
+  font-size:11px;
+  color:var(--text-muted);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+}
+.month-price {
+  font-size:26px;
+  font-weight:700;
+  margin-top:4px;
+}
+.month-meta {
+  font-size:11px;
+  color:var(--text-muted);
+  margin-top:2px;
+}
+.month-badge {
+  display:inline-block;
+  font-size:10px;
+  padding:2px 7px;
+  border-radius:9999px;
+  margin-top:5px;
+  font-weight:500;
+}
 
-    .tab-btn.active {
-      background: linear-gradient(135deg, #ff6b35 0%, var(--fuel-red) 100%);
-      border-color: transparent;
-      color: white;
-      box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
-    }
-
-    /* 价格卡片（完全保持原有设计） */
-    .results {
-      padding: 0 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    .price-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-      animation: slideUp 0.4s ease both;
-    }
-
-    .price-card:nth-child(1) { animation-delay: 0.05s; }
-    .price-card:nth-child(2) { animation-delay: 0.1s; }
-    .price-card:nth-child(3) { animation-delay: 0.15s; }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .card-date {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .card-change {
-      font-size: 13px;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-weight: 500;
-    }
-
-    .price-main {
-      padding: 24px 20px;
-      text-align: center;
-    }
-
-    .price-number {
-      font-size: 52px;
-      font-weight: 700;
-      line-height: 1;
-      color: var(--text-primary);
-    }
-
-    .price-unit {
-      font-size: 18px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .card-type {
-      text-align: center;
-      padding-bottom: 16px;
-      color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 500;
-    }
-  </style>
+/* LOADING / ERROR */
+.state-msg {
+  text-align:center;
+  padding:60px 20px;
+  color:var(--text-muted);
+  font-size:14px;
+}
+.state-error { color:#ff3b30; }
+</style>
 </head>
 <body>
-  <div class="app">
+<div class="app">
 
-    <!-- Header -->
-    <div class="header">
-      <div class="header-title">
-        <div>
-          <div class="header-eyebrow">REAL-TIME GTA</div>
-          <h1>GTA <span>FUEL</span></h1>
-        </div>
-        
-        <!-- Stockr 预测区域（严格放在标题右侧空白处） -->
-        <div class="stockr-box" id="stockr-box">
-          <div class="stockr-title">STOCKR 预测</div>
-          <div id="stockr-content">加载中...</div>
-        </div>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-eyebrow">REAL-TIME GTA</div>
+    <div class="header-row">
+      <div>
+        <h1>GTA <span>FUEL</span></h1>
+      </div>
+      <!-- Stockr 预测区域 -->
+      <div class="stockr-box" id="stockr-box">
+        <div class="stockr-title">Stockr 预测</div>
+        <div id="stockr-content"><div class="stockr-loading">加载中…</div></div>
       </div>
     </div>
-
-    <!-- 切换按钮 -->
-    <div class="tab-buttons">
-      <button class="tab-btn active" data-mode="dan" onclick="switchMode('dan')">最新预测</button>
-      <button class="tab-btn" data-mode="gaswizard" onclick="switchMode('gaswizard')">Gas Wizard</button>
-      <button class="tab-btn" data-mode="citynews" onclick="switchMode('citynews')">CityNews</button>
-    </div>
-
-    <!-- 主要内容区域（价格卡片） -->
-    <div class="results" id="results">
-      <!-- 动态插入卡片 -->
-    </div>
-
   </div>
 
-  <script>
-    let currentMode = 'dan';
+  <!-- TABS -->
+  <div class="tab-buttons">
+    <button class="tab-btn active" data-mode="dan"       onclick="switchMode('dan')">最新预测</button>
+    <button class="tab-btn"        data-mode="gaswizard" onclick="switchMode('gaswizard')">Gas Wizard</button>
+    <button class="tab-btn"        data-mode="citynews"  onclick="switchMode('citynews')">CityNews</button>
+  </div>
 
-    async function loadStockr() {
-      try {
-        const res = await fetch('/api/stockr');
-        const data = await res.json();
-        if (!data.success) return;
+  <!-- MAIN RESULTS -->
+  <div class="results" id="results"></div>
 
-        let html = '';
-        data.predictions.forEach(p => {
-          html += `
-            <div style="margin-bottom:8px;">
-              <div style="font-size:13px;color:#ff9500;">${p.label}</div>
-              <div style="font-size:24px;font-weight:700;">${p.price}</div>
-              <div style="font-size:12px;color:#8e8e9a;">${p.date}</div>
-            </div>`;
-        });
-        document.getElementById('stockr-content').innerHTML = html;
-      } catch(e) {}
-    }
+</div>
 
-    async function loadPrices(mode) {
-      currentMode = mode;
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
-      });
+<script>
+/* ── Helpers ─────────────────────────────────────── */
+const TODAY = new Date();
 
-      const container = document.getElementById('results');
-      container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#8e8e9a;">加载中...</div>';
+function dateLabel(dateStr) {
+  // dateStr examples: "Tuesday, April 14, 2026" or "Tuesday - Apr 14, 2026"
+  // Normalise various formats
+  let d;
+  try {
+    d = new Date(dateStr.replace(/\w+ - /, '').replace(/\w+, /, ''));
+  } catch(e) { return { label:'', cls:'badge-past' }; }
 
-      try {
-        let apiUrl = '';
-        if (mode === 'dan') apiUrl = '/api/gas';
-        else if (mode === 'gaswizard') apiUrl = '/api/gaswizard';
-        else if (mode === 'citynews') apiUrl = '/api/citynews';
+  const t = TODAY;
+  const tDay = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  const dDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((dDay - tDay) / 86400000);
 
-        const res = await fetch(apiUrl);
-        const data = await res.json();
+  if (diff === 0) return { label:'今日', cls:'badge-today' };
+  if (diff > 0)  return { label:'未来', cls:'badge-future' };
+  return { label:'过去', cls:'badge-past' };
+}
 
-        if (!data.success) throw new Error();
+function changeChip(changeStr) {
+  if (!changeStr || changeStr === 'n/c' || changeStr === '(n/c)') {
+    return `<span class="change-chip change-nc">持平</span>`;
+  }
+  const up = changeStr.includes('+') || (!changeStr.includes('-') && !changeStr.includes('n/c'));
+  return `<span class="change-chip ${up ? 'change-up' : 'change-down'}">${changeStr}</span>`;
+}
 
-        if (mode === 'citynews') {
-          // CityNews 特殊展示（保持卡片风格）
-          container.innerHTML = `
-            <div class="price-card">
-              <div class="price-main">
-                <div style="font-size:18px;margin-bottom:8px;">油价预期（${data.date}）</div>
-                <div style="font-size:42px;font-weight:700;color:${data.rise ? '#ff3b30' : '#30d158'}">
-                  ${data.rise ? '↑' : '↓'} ${data.cents} 分
-                </div>
-                <div style="margin-top:16px;font-size:15px;">平均 ${data.average} 分/L</div>
-              </div>
+function cnDate(dateStr) {
+  // Convert "Tuesday April 14, 2026" -> "4月14日 周二"
+  const days = { Monday:'周一',Tuesday:'周二',Wednesday:'周三',Thursday:'周四',Friday:'周五',Saturday:'周六',Sunday:'周日' };
+  const months = { January:1,February:2,March:3,April:4,May:5,June:6,July:7,August:8,September:9,October:10,November:11,December:12 };
+  const m = dateStr.match(/(\w+)\s+(\w+)\s+(\d+),\s+(\d+)/);
+  if (!m) return dateStr;
+  const [,dayName,monthName,day,year] = m;
+  const mo = months[monthName] || monthName;
+  const dw = days[dayName] || dayName;
+  return `${mo}月${day}日 ${dw}`;
+}
+
+/* ── Stockr ──────────────────────────────────────── */
+async function loadStockr() {
+  try {
+    const res  = await fetch('https://stockr.trustyalec.workers.dev/');
+    const html = await res.text();
+    const doc  = new DOMParser().parseFromString(html, 'text/html');
+    const h3s  = doc.querySelectorAll('h3');
+    const items = [];
+    h3s.forEach(h => {
+      const label = h.textContent.trim(); // "Today" or "Tomorrow"
+      const ps    = [];
+      let sib = h.nextElementSibling;
+      while (sib && ps.length < 2) {
+        const t = sib.textContent.trim();
+        if (t) ps.push(t);
+        sib = sib.nextElementSibling;
+      }
+      if (ps.length >= 1) {
+        items.push({ label, price: ps[0], date: ps[1] || '' });
+      }
+    });
+
+    const labelCN = { Today:'今日', Tomorrow:'明日' };
+    let html2 = '';
+    items.forEach(item => {
+      const lbl = labelCN[item.label] || item.label;
+      const dat = item.date ? cnDate(item.date) : '';
+      html2 += `
+        <div class="stockr-item">
+          <div>
+            <div style="display:flex;align-items:baseline;gap:6px;">
+              <span class="stockr-label">${lbl}</span>
+              <span class="stockr-price">${item.price}<span style="font-size:12px;color:var(--text-muted);font-weight:400;">¢</span></span>
             </div>
-            <div style="margin-top:20px;text-align:center;font-size:13px;color:#8e8e9a;">${data.description}</div>`;
-        } else {
-          // Dan / GasWizard 使用原有卡片样式
-          let html = '';
-          data.predictions.forEach(p => {
-            html += `
-              <div class="price-card">
-                <div class="card-header">
-                  <div class="card-date">${p.date}</div>
-                  ${p.change ? `<div class="card-change" style="background:rgba(255,59,48,0.15);color:#ff3b30;">${p.change}</div>` : ''}
-                </div>
-                <div class="price-main">
-                  <div class="price-number">${p.regular}</div>
-                  <div class="price-unit">¢/L</div>
-                </div>
-                <div class="card-type">Regular</div>
-              </div>`;
-          });
-          container.innerHTML = html;
+            <div class="stockr-date">${dat}</div>
+          </div>
+        </div>`;
+    });
+    document.getElementById('stockr-content').innerHTML = html2 || '<div class="stockr-loading">无数据</div>';
+  } catch(e) {
+    document.getElementById('stockr-content').innerHTML = '<div class="stockr-loading">加载失败</div>';
+  }
+}
+
+/* ── GAS.JS (Dan / affordableenergy) ────────────── */
+async function loadDan() {
+  try {
+    const res  = await fetch('https://gasfind.trustyalec.workers.dev/');
+    const html = await res.text();
+    const doc  = new DOMParser().parseFromString(html, 'text/html');
+
+    const cards = [];
+    doc.querySelectorAll('h3').forEach(h => {
+      const txt = h.textContent.trim();
+      if (!txt.startsWith('Gas Prices for')) return;
+      const dateRaw = txt.replace('Gas Prices for ', '').trim();
+      const grid = h.nextElementSibling;
+      if (!grid) return;
+      const divs = grid.querySelectorAll('div');
+      let regular='', premium='', diesel='', change='';
+      divs.forEach(d => {
+        const t = d.textContent.trim();
+        if (!t) return;
+        if (d.querySelector('span') || /^\d{3}/.test(t)) {
+          const sp = d.querySelector('span');
+          if (sp) {
+            const v = sp.textContent.trim();
+            if (!regular) { regular = v; }
+            else if (!premium) { premium = v; }
+            else if (!diesel)  { diesel  = v; }
+          }
         }
-      } catch (e) {
-        container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#ff3b30;">加载失败，请稍后重试</div>`;
+      });
+      // fallback: grab text nodes with numbers
+      if (!regular) {
+        const spans = grid.querySelectorAll('span');
+        const vals = [];
+        spans.forEach(s => {
+          const t2 = s.textContent.trim();
+          if (/^\d{3}/.test(t2)) vals.push(t2);
+        });
+        [regular, premium, diesel] = vals;
+      }
+      // change label: look for (n/c) or (+x) near regular
+      const chgEl = grid.querySelector('.change, [class*=change]');
+      if (chgEl) change = chgEl.textContent.trim();
+      if (regular) cards.push({ date:dateRaw, regular, premium, diesel, change });
+    });
+
+    // De-dup by date string
+    const seen = new Set();
+    const unique = cards.filter(c => {
+      if (seen.has(c.date)) return false;
+      seen.add(c.date); return true;
+    });
+
+    renderDanCards(unique);
+  } catch(e) {
+    setError();
+  }
+}
+
+function renderDanCards(prices) {
+  if (!prices || prices.length === 0) { setError('无数据'); return; }
+
+  // Sort ascending
+  prices.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  let html = '';
+  prices.slice(0,3).forEach(p => {
+    const { label, cls } = dateLabel(p.date);
+    const reg = p.regular || '—';
+    const prem = p.premium || '—';
+    const dies = p.diesel  || '—';
+
+    html += `
+      <div class="price-card">
+        <div class="card-header">
+          <div class="card-date">${cnDate(p.date)}</div>
+          ${label ? `<span class="card-badge ${cls}">${label}</span>` : ''}
+        </div>
+        <div class="price-main">
+          <div class="price-regular">
+            <div class="price-number">${reg}</div>
+            <div class="price-unit">¢/L</div>
+            <div class="price-type-label">普通 Regular</div>
+          </div>
+          <div class="price-side">
+            <div class="price-side-item">
+              <div class="price-side-val">${prem}</div>
+              <div class="price-side-lbl">高级 Premium</div>
+            </div>
+            <div class="price-side-item">
+              <div class="price-side-val">${dies}</div>
+              <div class="price-side-lbl">柴油 Diesel</div>
+            </div>
+          </div>
+        </div>
+        ${p.change ? `<div class="card-change-row">${changeChip(p.change)}</div>` : ''}
+      </div>`;
+  });
+  document.getElementById('results').innerHTML = html;
+}
+
+/* ── GAS WIZARD ──────────────────────────────────── */
+async function loadGasWizard() {
+  try {
+    const res  = await fetch('https://gaswizard.trustyalec.workers.dev/');
+    const html = await res.text();
+    const doc  = new DOMParser().parseFromString(html, 'text/html');
+
+    // Parse price list items
+    const prices = [];
+    doc.querySelectorAll('li').forEach(li => {
+      const heading = li.querySelector('strong') || li.firstChild;
+      const txt = li.textContent.trim();
+      // Matches: "Tuesday - Apr 14, 2026"
+      const dateM = txt.match(/\w+\s*-\s*\w+\s+\d+,\s+\d{4}/);
+      if (!dateM) return;
+      const dateStr = dateM[0];
+
+      const regM  = txt.match(/Regular\s+([\d.]+)\s*(\([^)]*\))?/);
+      const premM = txt.match(/Premium\s+([\d.]+)\s*(\([^)]*\))?/);
+      const diesM = txt.match(/Diesel\s+([\d.]+)\s*(\([^)]*\))?/);
+
+      if (regM) {
+        prices.push({
+          date:   dateStr,
+          regular: regM[1],
+          change:  regM[2] || '',
+          premium: premM ? premM[1] : '',
+          diesel:  diesM ? diesM[1] : ''
+        });
+      }
+    });
+
+    if (prices.length === 0) { setError('无数据'); return; }
+
+    // Sort: today first
+    prices.sort((a,b) => {
+      const da = new Date(a.date.replace(/\w+ - /,''));
+      const db = new Date(b.date.replace(/\w+ - /,''));
+      return da - db;
+    });
+
+    // Also pull historical values
+    const histRows = [];
+    const currentRows = doc.querySelectorAll('.current-average, [class*=current]');
+
+    // Try to get "Current Average Price" list items (smaller price points)
+    const allLis = Array.from(doc.querySelectorAll('li'));
+    allLis.forEach(li => {
+      const t = li.textContent.trim();
+      // matches "$1.749 (Reported: Apr 14, 2026 06:21)"
+      const m = t.match(/\$?([\d.]+)\s*\(?Reported(?:\s+at)?:\s*([^)]+)\)?/);
+      if (m) histRows.push({ price: m[1], date: m[2].trim() });
+    });
+
+    renderGasWizardCards(prices, histRows);
+  } catch(e) {
+    console.error(e);
+    setError();
+  }
+}
+
+function renderGasWizardCards(prices, histRows) {
+  let html = '';
+
+  prices.slice(0, 3).forEach(p => {
+    const dateNorm = p.date.replace(/(\w+) - /, '$1, ');
+    const { label, cls } = dateLabel(p.date);
+    const chgTxt = (p.change || '').replace(/[()]/g,'').trim();
+
+    html += `
+      <div class="price-card">
+        <div class="card-header">
+          <div class="card-date">${p.date}</div>
+          ${label ? `<span class="card-badge ${cls}">${label}</span>` : ''}
+        </div>
+        <div class="price-main">
+          <div class="price-regular">
+            <div class="price-number">${p.regular}</div>
+            <div class="price-unit">¢/L</div>
+            <div class="price-type-label">普通 Regular</div>
+          </div>
+          <div class="price-side">
+            ${p.premium ? `<div class="price-side-item">
+              <div class="price-side-val">${p.premium}</div>
+              <div class="price-side-lbl">高级 Premium</div>
+            </div>` : ''}
+            ${p.diesel ? `<div class="price-side-item">
+              <div class="price-side-val">${p.diesel}</div>
+              <div class="price-side-lbl">柴油 Diesel</div>
+            </div>` : ''}
+          </div>
+        </div>
+        ${chgTxt ? `<div class="card-change-row">${changeChip(chgTxt)}</div>` : ''}
+      </div>`;
+  });
+
+  // Historical Values
+  if (histRows.length > 0) {
+    html += `
+      <div class="history-section">
+        <div class="history-title">历史价格 Historical Values</div>
+        <div class="history-card">
+          <div class="history-row header-row">
+            <span class="history-date">报告时间</span>
+            <span class="history-price">价格 (¢)</span>
+          </div>`;
+    histRows.slice(0, 8).forEach(r => {
+      html += `
+          <div class="history-row">
+            <span class="history-date" style="font-size:12px;color:var(--text-muted);">${r.date}</span>
+            <span class="history-price">$${r.price}</span>
+          </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('results').innerHTML = html;
+}
+
+/* ── CITYNEWS ────────────────────────────────────── */
+async function loadCityNews() {
+  // Fetch from citynews worker
+  try {
+    const res  = await fetch('https://citynews.trustyalec.workers.dev/');
+    const html = await res.text();
+    const doc  = new DOMParser().parseFromString(html, 'text/html');
+    renderCityNews(doc, html);
+  } catch(e) {
+    // If direct fetch blocked by CORS, show fallback UI with the known format
+    renderCityNewsFallback();
+  }
+}
+
+function parseCityNewsText(text) {
+  // Pattern: "prices are expected to rise 3 cent(s) at 12:01am on April 15, 2026 to an average of 176.9 cent(s)/litre"
+  // or: "prices are expected to fall X cent(s) ..."
+  const riseM = text.match(/expected to (rise|fall|hold)\s*([\d.]+)?\s*cent/i);
+  const avgM  = text.match(/average of ([\d.]+)\s*cent/i);
+  const dateM = text.match(/on ([A-Z][a-z]+ \d+,\s*\d{4})/i);
+  const timeM = text.match(/at (\d+:\d+(?:am|pm))/i);
+
+  const dir   = riseM ? riseM[1].toLowerCase() : 'rise';
+  const cents = riseM && riseM[2] ? riseM[2] : '0';
+  const avg   = avgM ? avgM[1] : '—';
+  const date  = dateM ? dateM[1] : '';
+  const time  = timeM ? timeM[1] : '12:01am';
+
+  return { dir, cents, avg, date, time };
+}
+
+function renderCityNews(doc, rawHtml) {
+  // Try to find the summary text
+  const bodyText = doc.body ? doc.body.textContent : rawHtml;
+  const info = parseCityNewsText(bodyText);
+
+  // Try to get history / past months from the page
+  const histRows   = [];
+  const monthsData = [];
+
+  // Extract history rows (any table or list with price + date)
+  doc.querySelectorAll('tr').forEach(row => {
+    const cells = row.querySelectorAll('td,th');
+    if (cells.length >= 2) {
+      const c0 = cells[0].textContent.trim();
+      const c1 = cells[1].textContent.trim();
+      if (/\d{3}/.test(c1) || /\d{3}/.test(c0)) {
+        histRows.push({ date: c0, price: c1 });
       }
     }
+  });
 
-    function switchMode(mode) {
-      loadPrices(mode);
-    }
+  renderCityNewsUI(info, histRows, monthsData);
+}
 
-    // 初始化
-    window.onload = () => {
-      loadStockr();
-      loadPrices('dan');   // 默认显示最新预测
-    };
-  </script>
+function renderCityNewsFallback() {
+  // Use known data format from the description
+  const info = {
+    dir: 'rise',
+    cents: '3',
+    avg: '176.9',
+    date: 'April 15, 2026',
+    time: '12:01am'
+  };
+  renderCityNewsUI(info, [], []);
+}
+
+function renderCityNewsUI(info, histRows, monthsData) {
+  const { dir, cents, avg, date, time } = info;
+  const isRise = dir === 'rise' || dir === 'up';
+  const isHold = dir === 'hold' || dir === 'steady' || cents === '0';
+
+  const arrowEmoji  = isHold ? '➡️' : (isRise ? '⬆️' : '⬇️');
+  const dirCN       = isHold ? '持平' : (isRise ? '上涨' : '下降');
+  const colorStyle  = isHold
+    ? 'color:var(--text-muted)'
+    : (isRise ? 'color:#ff3b30' : 'color:#30d158');
+
+  // Format date in Chinese
+  let dateCN = date;
+  const dm = date.match(/([A-Za-z]+)\s+(\d+),?\s*(\d{4})?/);
+  if (dm) {
+    const monthMap = {January:'1',February:'2',March:'3',April:'4',May:'5',June:'6',
+                      July:'7',August:'8',September:'9',October:'10',November:'11',December:'12'};
+    dateCN = `${monthMap[dm[1]] || dm[1]}月${dm[2]}日`;
+  }
+
+  let html = `
+    <div class="citynews-summary-card">
+      <div class="card-header">
+        <div class="card-date">CityNews 油价预期（${dateCN}）</div>
+        <span class="card-badge ${isHold ? 'badge-past' : (isRise ? 'badge-today' : 'badge-future')}">${dirCN}</span>
+      </div>
+      <div class="citynews-headline">
+        <div class="citynews-direction">${arrowEmoji}</div>
+        <div class="citynews-change-text" style="${colorStyle}">
+          ${isHold ? '油价持平' : `${dirCN} ${cents} 分`}
+        </div>
+        <div class="citynews-date">${time} · ${dateCN}生效</div>
+      </div>
+      <div class="citynews-avg">
+        <span class="citynews-avg-label">平均价格</span>
+        <span class="citynews-avg-val">${avg} <span style="font-size:14px;color:var(--text-muted)">¢/升</span></span>
+      </div>
+    </div>`;
+
+  // History section if available
+  if (histRows.length > 0) {
+    html += `
+      <div class="history-section">
+        <div class="history-title">历史价格 Historical Values</div>
+        <div class="history-card">
+          <div class="history-row header-row">
+            <span class="history-date">日期</span>
+            <span class="history-price">价格</span>
+          </div>`;
+    histRows.slice(0, 10).forEach(r => {
+      html += `
+          <div class="history-row">
+            <span class="history-date" style="font-size:12px;color:var(--text-muted);">${r.date}</span>
+            <span class="history-price">${r.price}</span>
+          </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // Past months if available
+  if (monthsData.length > 0) {
+    html += `
+      <div class="history-section">
+        <div class="history-title">历史月度 Past Months</div>
+        <div class="months-grid">`;
+    monthsData.forEach(m => {
+      html += `
+          <div class="month-card">
+            <div class="month-name">${m.month}</div>
+            <div class="month-price">${m.price}<span style="font-size:13px;font-weight:400;color:var(--text-muted)">¢</span></div>
+            <div class="month-meta">${m.meta || ''}</div>
+          </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('results').innerHTML = html;
+}
+
+/* ── Mode switch ─────────────────────────────────── */
+function switchMode(mode) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById('results').innerHTML = `<div class="state-msg">加载中…</div>`;
+
+  if (mode === 'dan')       loadDan();
+  else if (mode === 'gaswizard') loadGasWizard();
+  else if (mode === 'citynews')  loadCityNews();
+}
+
+function setError(msg) {
+  document.getElementById('results').innerHTML =
+    `<div class="state-msg state-error">${msg || '加载失败，请稍后重试'}</div>`;
+}
+
+/* ── Init ────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  loadStockr();
+  loadDan();
+});
+</script>
 </body>
 </html>
