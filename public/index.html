@@ -1,491 +1,345 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⛽ GTA 油价</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --fuel-red: #ff3b30;
-            --fuel-orange: #ff9500;
-            --fuel-yellow: #ffd60a;
-            --bg-dark: #0a0a0f;
-            --bg-card: #13131a;
-            --bg-card2: #1c1c26;
-            --text-primary: #f5f5f7;
-            --text-muted: #8e8e9a;
-            --border: rgba(255,255,255,0.07);
-            --glow: rgba(255, 59, 48, 0.3);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GTA 油价</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --fuel-red: #ff3b30;
+      --fuel-orange: #ff9500;
+      --fuel-yellow: #ffd60a;
+      --bg-dark: #0a0a0f;
+      --bg-card: #13131a;
+      --bg-card2: #1c1c26;
+      --text-primary: #f5f5f7;
+      --text-muted: #8e8e9a;
+      --border: rgba(255, 255, 255, 0.07);
+      --glow: rgba(255, 59, 48, 0.3);
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 0;
-            overflow-x: hidden;
-        }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
 
-        /* Background texture */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,100,30,0.12), transparent),
-                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255,59,48,0.08), transparent);
-            pointer-events: none;
-            z-index: 0;
-        }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 100, 30, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 59, 48, 0.08), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
 
-        .app {
-            width: 100%;
-            max-width: 480px;
-            min-height: 100vh;
-            position: relative;
-            z-index: 1;
-            padding: 0 0 48px 0;
-        }
+    .app {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+      padding-bottom: 48px;
+    }
 
-        /* HEADER */
-        .header {
-            padding: 52px 24px 32px;
-            position: relative;
-        }
+    /* HEADER */
+    .header {
+      padding: 52px 24px 24px;
+      position: relative;
+    }
 
-        .header-eyebrow {
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--fuel-orange);
-            margin-bottom: 8px;
-        }
+    .header-eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--fuel-orange);
+      margin-bottom: 8px;
+    }
 
-        .header h1 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(52px, 15vw, 72px);
-            line-height: 0.9;
-            letter-spacing: 0.02em;
-            color: var(--text-primary);
-        }
+    .header-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-        .header h1 span {
-            display: block;
-            background: linear-gradient(135deg, var(--fuel-orange) 0%, var(--fuel-red) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+    .header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(52px, 15vw, 72px);
+      line-height: 0.9;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+    }
 
-        .header-sub {
-            margin-top: 12px;
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 300;
-            letter-spacing: 0.02em;
-        }
+    .header h1 span {
+      background: linear-gradient(135deg, var(--fuel-orange) 0%, var(--fuel-red) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
-        /* LIVE BADGE */
-        .live-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255,59,48,0.12);
-            border: 1px solid rgba(255,59,48,0.25);
-            color: var(--fuel-red);
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            padding: 5px 12px;
-            border-radius: 100px;
-            margin-top: 16px;
-        }
+    /* Stockr 预测区域（标题右侧） */
+    .stockr-box {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      min-width: 140px;
+      text-align: center;
+    }
 
-        .live-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--fuel-red);
-            border-radius: 50%;
-            animation: pulse 1.8s ease-in-out infinite;
-        }
+    .stockr-title {
+      font-size: 11px;
+      color: var(--fuel-orange);
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.7); }
-        }
+    .stockr-price {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
 
-        /* BUTTON */
-        .section-pad { padding: 0 20px; }
+    .stockr-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
 
-        .query-btn {
-            width: 100%;
-            padding: 18px 24px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            color: #fff;
-            background: linear-gradient(135deg, #ff6b35 0%, var(--fuel-red) 100%);
-            border: none;
-            border-radius: 16px;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            box-shadow: 0 8px 32px rgba(255,59,48,0.35), 0 2px 8px rgba(0,0,0,0.4);
-        }
+    /* 切换按钮组 */
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      padding: 0 20px;
+      margin-top: 12px;
+    }
 
-        .query-btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
+    .tab-btn {
+      flex: 1;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
 
-        .query-btn:hover::before { opacity: 1; }
-        .query-btn:active { transform: scale(0.98); box-shadow: 0 4px 16px rgba(255,59,48,0.3); }
-        .query-btn:disabled {
-            background: var(--bg-card2);
-            color: var(--text-muted);
-            box-shadow: none;
-            cursor: not-allowed;
-        }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #ff6b35 0%, var(--fuel-red) 100%);
+      border-color: transparent;
+      color: white;
+      box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
+    }
 
-        /* DIVIDER */
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 24px 20px 16px;
-        }
-        .divider-line { flex: 1; height: 1px; background: var(--border); }
-        .divider-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+    /* 价格卡片（完全保持原有设计） */
+    .results {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
 
-        /* RESULTS */
-        .results { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+    .price-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      animation: slideUp 0.4s ease both;
+    }
 
-        .empty-state {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-muted);
-        }
+    .price-card:nth-child(1) { animation-delay: 0.05s; }
+    .price-card:nth-child(2) { animation-delay: 0.1s; }
+    .price-card:nth-child(3) { animation-delay: 0.15s; }
 
-        .empty-icon { font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.4; }
-        .empty-state p { font-size: 14px; line-height: 1.6; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        /* PRICE CARD */
-        .price-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            overflow: hidden;
-            animation: slideUp 0.4s ease both;
-        }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
 
-        .price-card:nth-child(1) { animation-delay: 0.05s; }
-        .price-card:nth-child(2) { animation-delay: 0.1s; }
-        .price-card:nth-child(3) { animation-delay: 0.15s; }
+    .card-date {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    .card-change {
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
 
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px 12px;
-            border-bottom: 1px solid var(--border);
-        }
+    .price-main {
+      padding: 24px 20px;
+      text-align: center;
+    }
 
-        .card-date {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: 0.02em;
-        }
+    .price-number {
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text-primary);
+    }
 
-        .card-tag {
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 100px;
-        }
+    .price-unit {
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
 
-        .card-tag.today {
-            background: rgba(255,149,0,0.15);
-            color: var(--fuel-orange);
-            border: 1px solid rgba(255,149,0,0.25);
-        }
-
-        .card-tag.past {
-            background: rgba(255,255,255,0.05);
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-        }
-
-        .price-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            padding: 16px 12px 20px;
-            gap: 4px;
-        }
-
-        .price-item {
-            text-align: center;
-            padding: 12px 8px;
-            border-radius: 12px;
-            transition: background 0.2s;
-        }
-
-        .price-item:hover { background: rgba(255,255,255,0.04); }
-
-        .price-item .fuel-icon {
-            font-size: 18px;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .price-item .fuel-label {
-            display: block;
-            font-size: 10px;
-            color: var(--text-muted);
-            font-weight: 500;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-
-        .price-item .fuel-type {
-            display: block;
-            font-size: 10px;
-            color: var(--text-muted);
-            font-weight: 400;
-            margin-bottom: 4px;
-        }
-
-        .price-item .fuel-value {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 30px;
-            letter-spacing: 0.02em;
-            line-height: 1;
-            display: block;
-        }
-
-        .price-item .fuel-unit {
-            display: block;
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .fuel-value.regular { color: var(--fuel-yellow); }
-        .fuel-value.premium { color: var(--fuel-orange); }
-        .fuel-value.diesel  { color: #5ec8ff; }
-
-        /* DIVIDER between price items */
-        .price-item + .price-item {
-            border-left: 1px solid var(--border);
-        }
-
-        /* TIMESTAMP */
-        .timestamp-bar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 12px 20px 0;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* LOADING */
-        .loading-state {
-            text-align: center;
-            padding: 48px 24px;
-        }
-
-        .spinner {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(255,255,255,0.08);
-            border-top-color: var(--fuel-orange);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .loading-state p { color: var(--text-muted); font-size: 14px; }
-
-        /* ERROR */
-        .error-state {
-            background: rgba(255,59,48,0.08);
-            border: 1px solid rgba(255,59,48,0.2);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            color: var(--fuel-red);
-            font-size: 14px;
-        }
-
-        /* Legend */
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px 20px 0;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-        .legend-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-        }
-        .legend-dot.r { background: var(--fuel-yellow); }
-        .legend-dot.p { background: var(--fuel-orange); }
-        .legend-dot.d { background: #5ec8ff; }
-    </style>
+    .card-type {
+      text-align: center;
+      padding-bottom: 16px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+  </style>
 </head>
 <body>
-<div class="app">
+  <div class="app">
 
+    <!-- Header -->
     <div class="header">
-        <div class="header-eyebrow">📍 GTA, Ontario</div>
-        <h1>GTA<span>FUEL</span></h1>
-        <p class="header-sub">每日油价 · Daily Gas Prices</p>
-        <div class="live-badge"><span class="live-dot"></span>最新预测</div>
-    </div>
-
-    <div class="section-pad">
-        <button class="query-btn" id="queryButton">⛽ 查询明日油价</button>
-    </div>
-
-    <div class="divider">
-        <div class="divider-line"></div>
-        <div class="divider-label">价格列表</div>
-        <div class="divider-line"></div>
-    </div>
-
-    <div class="legend">
-        <div class="legend-item"><div class="legend-dot r"></div>普通 Regular</div>
-        <div class="legend-item"><div class="legend-dot p"></div>高级 Premium</div>
-        <div class="legend-item"><div class="legend-dot d"></div>柴油 Diesel</div>
-    </div>
-
-    <div style="height:16px"></div>
-
-    <div class="results" id="resultsContainer">
-        <div class="empty-state">
-            <span class="empty-icon">⛽</span>
-            <p>点击上方按钮<br>获取最新 GTA 油价预测</p>
+      <div class="header-title">
+        <div>
+          <div class="header-eyebrow">REAL-TIME GTA</div>
+          <h1>GTA <span>FUEL</span></h1>
         </div>
+        
+        <!-- Stockr 预测区域（严格放在标题右侧空白处） -->
+        <div class="stockr-box" id="stockr-box">
+          <div class="stockr-title">STOCKR 预测</div>
+          <div id="stockr-content">加载中...</div>
+        </div>
+      </div>
     </div>
 
-</div>
+    <!-- 切换按钮 -->
+    <div class="tab-buttons">
+      <button class="tab-btn active" data-mode="dan" onclick="switchMode('dan')">最新预测</button>
+      <button class="tab-btn" data-mode="gaswizard" onclick="switchMode('gaswizard')">Gas Wizard</button>
+      <button class="tab-btn" data-mode="citynews" onclick="switchMode('citynews')">CityNews</button>
+    </div>
 
-<script>
-    document.getElementById('queryButton').addEventListener('click', function () {
-        const btn = this;
-        const results = document.getElementById('resultsContainer');
+    <!-- 主要内容区域（价格卡片） -->
+    <div class="results" id="results">
+      <!-- 动态插入卡片 -->
+    </div>
 
-        btn.disabled = true;
-        btn.textContent = '获取中…';
-        results.innerHTML = `
-            <div class="loading-state">
-                <div class="spinner"></div>
-                <p>正在获取最新预测…</p>
-            </div>`;
+  </div>
 
-        fetch('/api/gas')
-            .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-            .then(data => {
-                displayResults(data);
-                btn.disabled = false;
-                btn.textContent = '⛽ 刷新油价预测';
-            })
-            .catch(() => {
-                // ---- DEMO fallback (remove when real API is ready) ----
-                const demo = {
-                    timestamp: new Date().toLocaleString('zh-CN'),
-                    prices: [
-                        { date: '今日 · ' + new Date().toLocaleDateString('zh-CN'), regular: '1.589', premium: '1.749', diesel: '1.629', today: true },
-                        { date: '明日 · ' + new Date(Date.now()-86400000).toLocaleDateString('zh-CN'), regular: '1.579', premium: '1.739', diesel: '1.619', today: false },
-                        { date: '后日 · ' + new Date(Date.now()-172800000).toLocaleDateString('zh-CN'), regular: '1.569', premium: '1.729', diesel: '1.609', today: false },
-                    ]
-                };
-                displayResults(demo);
-                btn.disabled = false;
-                btn.textContent = '⛽ 刷新油价';
-            });
-    });
+  <script>
+    let currentMode = 'dan';
 
-    function displayResults(data) {
-        const results = document.getElementById('resultsContainer');
+    async function loadStockr() {
+      try {
+        const res = await fetch('/api/stockr');
+        const data = await res.json();
+        if (!data.success) return;
+
         let html = '';
-
-        if (data.prices && data.prices.length > 0) {
-            data.prices.forEach((p, i) => {
-                const tagClass = (p.today || i === 0) ? 'today' : 'future';
-                const tagText  = (p.today || i === 0) ? '今日' : '未来';
-                html += `
-                <div class="price-card">
-                    <div class="card-header">
-                        <span class="card-date">📅 ${p.date}</span>
-                        <span class="card-tag ${tagClass}">${tagText}</span>
-                    </div>
-                    <div class="price-grid">
-                        <div class="price-item">
-                            <span class="fuel-icon">🟡</span>
-                            <span class="fuel-label">普通</span>
-                            <span class="fuel-type">Regular</span>
-                            <span class="fuel-value regular">$${p.regular}</span>
-                            <span class="fuel-unit">per litre</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="fuel-icon">🟠</span>
-                            <span class="fuel-label">高级</span>
-                            <span class="fuel-type">Premium</span>
-                            <span class="fuel-value premium">$${p.premium}</span>
-                            <span class="fuel-unit">per litre</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="fuel-icon">🔵</span>
-                            <span class="fuel-label">柴油</span>
-                            <span class="fuel-type">Diesel</span>
-                            <span class="fuel-value diesel">$${p.diesel}</span>
-                            <span class="fuel-unit">per litre</span>
-                        </div>
-                    </div>
-                </div>`;
-            });
-
-            html += `<div class="timestamp-bar">🕒 更新于 ${data.timestamp}</div>`;
-        } else {
-            html = '<div class="error-state">暂无油价数据</div>';
-        }
-
-        results.innerHTML = html;
+        data.predictions.forEach(p => {
+          html += `
+            <div style="margin-bottom:8px;">
+              <div style="font-size:13px;color:#ff9500;">${p.label}</div>
+              <div style="font-size:24px;font-weight:700;">${p.price}</div>
+              <div style="font-size:12px;color:#8e8e9a;">${p.date}</div>
+            </div>`;
+        });
+        document.getElementById('stockr-content').innerHTML = html;
+      } catch(e) {}
     }
-</script>
+
+    async function loadPrices(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      const container = document.getElementById('results');
+      container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#8e8e9a;">加载中...</div>';
+
+      try {
+        let apiUrl = '';
+        if (mode === 'dan') apiUrl = '/api/gas';
+        else if (mode === 'gaswizard') apiUrl = '/api/gaswizard';
+        else if (mode === 'citynews') apiUrl = '/api/citynews';
+
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (!data.success) throw new Error();
+
+        if (mode === 'citynews') {
+          // CityNews 特殊展示（保持卡片风格）
+          container.innerHTML = `
+            <div class="price-card">
+              <div class="price-main">
+                <div style="font-size:18px;margin-bottom:8px;">油价预期（${data.date}）</div>
+                <div style="font-size:42px;font-weight:700;color:${data.rise ? '#ff3b30' : '#30d158'}">
+                  ${data.rise ? '↑' : '↓'} ${data.cents} 分
+                </div>
+                <div style="margin-top:16px;font-size:15px;">平均 ${data.average} 分/L</div>
+              </div>
+            </div>
+            <div style="margin-top:20px;text-align:center;font-size:13px;color:#8e8e9a;">${data.description}</div>`;
+        } else {
+          // Dan / GasWizard 使用原有卡片样式
+          let html = '';
+          data.predictions.forEach(p => {
+            html += `
+              <div class="price-card">
+                <div class="card-header">
+                  <div class="card-date">${p.date}</div>
+                  ${p.change ? `<div class="card-change" style="background:rgba(255,59,48,0.15);color:#ff3b30;">${p.change}</div>` : ''}
+                </div>
+                <div class="price-main">
+                  <div class="price-number">${p.regular}</div>
+                  <div class="price-unit">¢/L</div>
+                </div>
+                <div class="card-type">Regular</div>
+              </div>`;
+          });
+          container.innerHTML = html;
+        }
+      } catch (e) {
+        container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#ff3b30;">加载失败，请稍后重试</div>`;
+      }
+    }
+
+    function switchMode(mode) {
+      loadPrices(mode);
+    }
+
+    // 初始化
+    window.onload = () => {
+      loadStockr();
+      loadPrices('dan');   // 默认显示最新预测
+    };
+  </script>
 </body>
 </html>
