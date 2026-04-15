@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     }
 
     const html = await response.text();
+    console.log("RAW HTML:", html.slice(0, 500));
 
     const predictions = [];
 
