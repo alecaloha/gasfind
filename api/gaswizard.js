@@ -11,6 +11,8 @@ export default async function handler(req, res) {
     });
 
     const html = await response.text();
+    console.log(html.slice(0, 500));
+
     const $ = cheerio.load(html);
 
     const today = $(".gw-price-today .gw-price").first().text().trim();
