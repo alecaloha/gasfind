@@ -2,7 +2,11 @@
 export default async function handler(req, res) {
   try {
     const response = await fetch("https://stockr.trustyalec.workers.dev", {
-      headers: { "User-Agent": "Mozilla/5.0" }
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9"
+      }
     });
 
     if (!response.ok) {
@@ -13,23 +17,25 @@ export default async function handler(req, res) {
 
     const predictions = [];
 
-    // Today（单行版本）
-    const todayMatch = html.match(/### Today\s+(\d+\.?\d*)\s+([A-Za-z]+ \d{1,2}, \d{4})/);
+    // 通用模式：匹配 "Today" 后跟价格和日期（不依赖换行）
+    const todayRegex = /Today[^0-9]*?(\d+\.?\d*)[^A-Za-z]*?([A-Za-z]+ \d{1,2}, \d{4})/i;
+    const tomorrowRegex = /Tomorrow[^0-9]*?(\d+\.?\d*)[^A-Za-z]*?([A-Za-z]+ \d{1,2}, \d{4})/i;
+
+    const todayMatch = html.match(todayRegex);
     if (todayMatch) {
       predictions.push({
         label: "今天",
         price: parseFloat(todayMatch[1]),
-        date: todayMatch[2].trim()
+        date: todayMatch[2]
       });
     }
 
-    // Tomorrow（单行版本）
-    const tomorrowMatch = html.match(/### Tomorrow\s+(\d+\.?\d*)\s+([A-Za-z]+ \d{1,2}, \d{4})/);
+    const tomorrowMatch = html.match(tomorrowRegex);
     if (tomorrowMatch) {
       predictions.push({
         label: "明天",
         price: parseFloat(tomorrowMatch[1]),
-        date: tomorrowMatch[2].trim()
+        date: tomorrowMatch[2]
       });
     }
 
