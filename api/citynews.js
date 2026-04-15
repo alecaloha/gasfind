@@ -1,131 +1,167 @@
 // api/citynews.js
+//
+// ══════════════════════════════════════════════════════
 // 数据源: https://toronto.citynews.ca/toronto-gta-gas-prices/
 //
-// 原始问题:
-// 1. 直接 fetch 被服务器拒绝 (403/blocked) — 需要加 User-Agent / Accept 等浏览器请求头
-// 2. 正则 "rise (\d+) cent" 需要前面有空格，若出现 "rise 3 cent" 可以匹配，
-//    但页面实际文字是 "expected to rise 3 cent(s)" — 需确认正则无误
-// 3. history 正则 "(\w+\s+\d+,\s+\d{4})\s*([+-]?\d+)\s*cent.*?(\d+\.?\d*)" 过于复杂，
-//    实际历史条目格式不同，导致 historyMatches 为空
-// 4. pastMonths 是写死的静态数据，未从页面抓取
+// 页面真实文本结构 (关键片段):
+//
+// 【摘要段落】
+//   "3 cent(s) En-Pro tells CityNews that prices are expected to rise 3 cent(s)
+//    at 12:01am on April 15, 2026 to an average of 176.9 cent(s)/litre
+//    at local stations."
+//
+//   或下降版本:
+//   "3 cent(s) En-Pro tells CityNews that prices are expected to fall 3 cent(s)
+//    at 12:01am on April 15, 2026 to an average of 173.9 cent(s)/litre"
+//
+//   或持平版本:
+//   "En-Pro tells CityNews that prices are expected to hold steady..."
+//
+//   注意: 页面开头就是那个变动数字 "3 cent(s)"，
+//         整个句子都在一个段落里，结构固定。
+//
+// 【历史价格 Historical Values】
+//   页面有历史记录列表，每条格式类似:
+//   "April 13, 2026  Rise 2 cent(s)  176.9 cent(s)/litre"
+//   或表格: 日期 | 变动 | 价格
+//   精确HTML结构依赖页面渲染，用多套正则覆盖。
+//
+// 【Past Months】
+//   月度汇总，格式类似:
+//   "March, 2026  High: 178.9  Low: 135.9 cent(s)/litre"
+//
+// ══════════════════════════════════════════════════════
+//
+// 注意: toronto.citynews.ca 会拒绝无浏览器UA的请求，
+//       必须带完整浏览器请求头才能获取页面内容。
+//
+// 返回结构:
+// {
+//   success: true,
+//   summary: {
+//     direction: "rise" | "fall" | "hold",
+//     cents: "3",            // 变动分数，hold时为"0"
+//     date: "April 15, 2026",
+//     time: "12:01am",
+//     average: "176.9"       // 变动后平均价，单位¢/L
+//   },
+//   description: "完整原文句子",
+//   history: [
+//     { date: "April 13, 2026", direction: "rise", cents: "2", price: "176.9" },
+//     ...
+//   ],
+//   pastMonths: [
+//     { month: "March, 2026", high: "178.9", low: "135.9" },
+//     ...
+//   ]
+// }
 
 export default {
   async fetch(request) {
-    // 模拟浏览器请求头，避免 403
-    const headers = {
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    const BROWSER_HEADERS = {
+      "User-Agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Accept-Language": "en-CA,en;q=0.9",
-      "Referer": "https://toronto.citynews.ca/"
+      "Cache-Control":   "no-cache",
+      "Referer":         "https://toronto.citynews.ca/"
     };
 
     try {
-      const res = await fetch("https://toronto.citynews.ca/toronto-gta-gas-prices/", { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(
+        "https://toronto.citynews.ca/toronto-gta-gas-prices/",
+        { headers: BROWSER_HEADERS }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const html = await res.text();
 
-      // ── 主摘要 ──────────────────────────────────────────────────────
-      // 页面文字示例:
-      // "En-Pro tells CityNews that prices are expected to rise 3 cent(s) at 12:01am on April 15, 2026 to an average of 176.9 cent(s)/litre"
-      // 或 "...expected to fall 3 cent(s)..."
-      // 或 "...expected to hold steady..."
+      // ── 1. 解析摘要 ──────────────────────────────────────────────
+      // 主句: "prices are expected to rise/fall N cent(s) at TIME on DATE to an average of AVG cent(s)/litre"
+      // 变动方向
+      const riseM = html.match(/expected to rise\s+([\d.]+)\s*cent/i);
+      const fallM = html.match(/expected to fall\s+([\d.]+)\s*cent/i);
+      const holdM = html.match(/expected to hold\s+steady/i);
 
-      const riseM  = html.match(/expected to rise\s+([\d.]+)\s*cent/i);
-      const fallM  = html.match(/expected to fall\s+([\d.]+)\s*cent/i);
-      const holdM  = html.match(/expected to hold\s+steady/i);
+      const direction = riseM ? "rise" : (fallM ? "fall" : "hold");
+      const cents     = riseM ? riseM[1] : (fallM ? fallM[1] : "0");
 
-      const cents  = riseM ? riseM[1] : (fallM ? fallM[1] : "0");
-      const isRise = !!riseM;
-      const isHold = !riseM && !fallM;
+      // 生效时间: "at 12:01am on April 15, 2026"
+      const timeM = html.match(/at\s+([\d:]+[ap]m)\s+on\s+([A-Z][a-z]+ \d{1,2},\s*\d{4})/i);
+      const time  = timeM ? timeM[1] : "12:01am";
+      const date  = timeM ? timeM[2].trim() : "";
 
-      // 生效日期: "at 12:01am on April 15, 2026"
-      const dateM  = html.match(/at\s+[\d:]+[ap]m\s+on\s+([A-Za-z]+ \d{1,2},\s*\d{4})/i);
-      const date   = dateM ? dateM[1].trim() : "";
+      // 平均价格: "to an average of 176.9 cent(s)/litre"
+      const avgM    = html.match(/average of\s+([\d.]+)\s*cent/i);
+      const average = avgM ? avgM[1] : "";
 
-      // 生效时间
-      const timeM  = html.match(/at\s+([\d:]+[ap]m)\s+on/i);
-      const time   = timeM ? timeM[1] : "12:01am";
+      // 提取完整描述句 (En-Pro...stations.)
+      const descM = html.match(/(En-Pro tells CityNews[^<.]*\.)/i);
+      const description = descM ? descM[1].trim() : "";
 
-      // 平均价格
-      const avgM   = html.match(/average of\s+([\d.]+)\s*cent/i);
-      const average= avgM ? avgM[1] : "";
+      const summary = { direction, cents, date, time, average };
 
-      const description = isHold
-        ? `En-Pro tells CityNews that prices are expected to hold steady.`
-        : `En-Pro tells CityNews that prices are expected to ${isRise ? "rise" : "fall"} ${cents} cent(s) at ${time} on ${date} to an average of ${average} cent(s)/litre at local stations.`;
-
-      // ── 历史价格 Historical Values ────────────────────────────────
-      // 页面通常有如下格式的历史列表：
-      // "April 13, 2026  +2  176.9"  或表格行
+      // ── 2. 解析历史价格 ──────────────────────────────────────────
+      // 尝试多种格式:
+      // 格式A: "April 13, 2026 Rise 2 cent(s) 176.9"  (纯文本段落)
+      // 格式B: 表格 <td>April 13</td><td>+2</td><td>176.9</td>
       const history = [];
 
-      // 策略1: 查找 "月 日, 年" 配对价格行
-      // 示例: "April 13, 2026\n174.9"
-      const histRe1 = /([A-Z][a-z]+ \d{1,2},\s*\d{4})[^\d]*([\d]{3}\.?\d?)\s*cent/gi;
-      let hm1;
-      while ((hm1 = histRe1.exec(html)) !== null && history.length < 10) {
-        // 排除摘要中的日期（已用 date 变量）
-        if (hm1[1].trim() !== date) {
-          history.push({ date: hm1[1].trim(), price: hm1[2] });
-        }
+      // 格式A: 日期 + rise/fall + 数字 + cent + 价格
+      const histReA = /([A-Z][a-z]+ \d{1,2},\s*\d{4})[^<]*?(rise|fall)\s+([\d.]+)\s*cent[^<]*?([\d]{3}\.[\d])/gi;
+      let hmA;
+      while ((hmA = histReA.exec(html)) !== null && history.length < 10) {
+        history.push({
+          date:      hmA[1].trim(),
+          direction: hmA[2].toLowerCase(),
+          cents:     hmA[3],
+          price:     hmA[4]
+        });
       }
 
-      // 策略2: 如果策略1抓不到，找 "+/-X cents" + 日期格式
+      // 格式B: 表格行 <tr><td>日期</td><td>变动</td><td>价格</td></tr>
       if (history.length === 0) {
-        const histRe2 = /([A-Z][a-z]+ \d{1,2},\s*\d{4}).*?([+-]\d+)\s*cent.*?([\d]{3}\.?\d?)/gi;
-        let hm2;
-        while ((hm2 = histRe2.exec(html)) !== null && history.length < 10) {
-          history.push({
-            date:   hm2[1].trim(),
-            change: hm2[2],
-            price:  hm2[3]
-          });
-        }
-      }
-
-      // ── Past Months ───────────────────────────────────────────────
-      // 页面通常有如: "March, 2026  High: 178.9  Low: 135.9"
-      const pastMonths = [];
-      const monthRe = /([A-Z][a-z]+,\s*\d{4})[^<]*?[Hh]igh[:\s]*([\d.]+)[^<]*?[Ll]ow[:\s]*([\d.]+)/g;
-      let mm;
-      while ((mm = monthRe.exec(html)) !== null && pastMonths.length < 6) {
-        pastMonths.push({ month: mm[1], high: mm[2], low: mm[3] });
-      }
-
-      // 策略2: 如果 high/low 格式找不到，找月份 + 单个价格
-      if (pastMonths.length === 0) {
-        const monthRe2 = /([A-Z][a-z]+,?\s*\d{4})[^<\d]*([\d]{3}\.?\d?)/g;
-        let mm2;
-        const seen = new Set();
-        while ((mm2 = monthRe2.exec(html)) !== null && pastMonths.length < 6) {
-          const key = mm2[1].trim();
-          if (!seen.has(key)) {
-            seen.add(key);
-            pastMonths.push({ month: key, price: mm2[2] });
+        const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+        let tr;
+        while ((tr = trRe.exec(html)) !== null && history.length < 10) {
+          const cells = [...tr[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(c =>
+            c[1].replace(/<[^>]+>/g, "").trim()
+          );
+          // 期望: [日期, 变动/价格, ...]
+          if (cells.length >= 2) {
+            const dateCell  = cells[0];
+            const priceCell = cells[cells.length - 1];
+            if (/[A-Z][a-z]+ \d/.test(dateCell) && /[\d]{3}\.[\d]/.test(priceCell)) {
+              const dirCell = cells[1] || "";
+              history.push({
+                date:      dateCell,
+                direction: /fall|drop|-/i.test(dirCell) ? "fall" : "rise",
+                cents:     (dirCell.match(/[\d.]+/) || [""])[0],
+                price:     (priceCell.match(/[\d]{3}\.[\d]/) || [""])[0]
+              });
+            }
           }
         }
       }
 
+      // ── 3. 解析 Past Months ──────────────────────────────────────
+      // 格式: "March, 2026 High: 178.9 Low: 135.9" 或表格
+      const pastMonths = [];
+
+      const monthReA = /([A-Z][a-z]+,\s*\d{4})[^<]*?[Hh]igh[:\s]*([\d.]+)[^<]*?[Ll]ow[:\s]*([\d.]+)/g;
+      let mm;
+      while ((mm = monthReA.exec(html)) !== null && pastMonths.length < 6) {
+        pastMonths.push({ month: mm[1].trim(), high: mm[2], low: mm[3] });
+      }
+
       return Response.json({
         success: true,
-        date,
-        time,
-        rise: isRise,
-        hold: isHold,
-        cents,
-        average,
+        summary,
         description,
         history,
         pastMonths
       });
 
     } catch (err) {
-      // 如果抓取失败（403等），返回错误信息和 success:false
-      // 前端应展示适当的错误提示，不使用静态数据
-      return Response.json({
-        success: false,
-        error: err.message
-      }, { status: 500 });
+      return Response.json({ success: false, error: err.message }, { status: 500 });
     }
   }
 };
