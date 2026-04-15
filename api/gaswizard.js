@@ -5,14 +5,16 @@ export default async function handler(req, res) {
   try {
     const response = await fetch("https://gaswizard.ca/gas-prices/toronto/", {
       headers: {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "text/html"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.google.com/",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
       }
     });
 
     const html = await response.text();
-    console.log(html.slice(0, 500));
-
     const $ = cheerio.load(html);
 
     const today = $(".gw-price-today .gw-price").first().text().trim();
