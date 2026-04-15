@@ -1,3 +1,7 @@
+"builds": [
+  { "src": "api/*.js", "use": "@vercel/node" },
+  { "src": "public/**", "use": "@vercel/static" }
+]
 "routes": [
   { "src": "/api/stockr", "dest": "/api/stockr.js" },
   { "src": "/api/gas", "dest": "/api/gas.js" },
