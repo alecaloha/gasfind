@@ -4,8 +4,7 @@ export default async function handler(req, res) {
     const response = await fetch("https://stockr.trustyalec.workers.dev", {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "en-US,en;q=0.9"
+        "Accept": "text/html"
       }
     });
 
@@ -14,34 +13,35 @@ export default async function handler(req, res) {
     }
 
     const html = await response.text();
-    console.log("RAW HTML:", html.slice(0, 500));
 
     const predictions = [];
 
-    // 通用模式：匹配 "Today" 后跟价格和日期（不依赖换行）
-    const todayRegex = /Today[^0-9]*?(\d+\.?\d*)[^A-Za-z]*?([A-Za-z]+ \d{1,2}, \d{4})/i;
-    const tomorrowRegex = /Tomorrow[^0-9]*?(\d+\.?\d*)[^A-Za-z]*?([A-Za-z]+ \d{1,2}, \d{4})/i;
+    // Today
+    const todayPrice = html.match(/id="today"[\s\S]*?class="price"[^>]*>(\d+\.?\d*)/i);
+    const todayDate = html.match(/id="today"[\s\S]*?class="date"[^>]*>([^<]+)/i);
 
-    const todayMatch = html.match(todayRegex);
-    if (todayMatch) {
+    if (todayPrice && todayDate) {
       predictions.push({
         label: "今天",
-        price: parseFloat(todayMatch[1]),
-        date: todayMatch[2]
+        price: parseFloat(todayPrice[1]),
+        date: todayDate[1].trim()
       });
     }
 
-    const tomorrowMatch = html.match(tomorrowRegex);
-    if (tomorrowMatch) {
+    // Tomorrow
+    const tomorrowPrice = html.match(/id="tomorrow"[\s\S]*?class="price"[^>]*>(\d+\.?\d*)/i);
+    const tomorrowDate = html.match(/id="tomorrow"[\s\S]*?class="date"[^>]*>([^<]+)/i);
+
+    if (tomorrowPrice && tomorrowDate) {
       predictions.push({
         label: "明天",
-        price: parseFloat(tomorrowMatch[1]),
-        date: tomorrowMatch[2]
+        price: parseFloat(tomorrowPrice[1]),
+        date: tomorrowDate[1].trim()
       });
     }
 
     if (predictions.length === 0) {
-      throw new Error("未能解析到 Stockr 油价数据，页面结构可能变更");
+      throw new Error("未能解析到 Stockr 油价数据（HTML 结构变更）");
     }
 
     return res.status(200).json({
